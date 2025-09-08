@@ -5,7 +5,7 @@ A Go client library for the Laneful API.
 ## Installation
 
 ```bash
-go get github.com/lanefulhq/laneful-go/v1
+go get github.com/lanefulhq/laneful-go
 ```
 
 ## Quick Start
@@ -17,7 +17,7 @@ import (
     "context"
     "log"
 
-    "github.com/lanefulhq/laneful-go/v1"
+    "github.com/lanefulhq/laneful-go"
 )
 
 func main() {
