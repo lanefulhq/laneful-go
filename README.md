@@ -1,3 +1,6 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/lanefulhq/laneful-go/v1.svg)](https://pkg.go.dev/github.com/lanefulhq/laneful-go)
+---
+
 # Laneful Go Client
 
 A Go client library for the Laneful API.

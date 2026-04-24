@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+const (
+	version   = "1.1.0"
+	userAgent = "laneful-go/" + version
+)
+
 // Address represents an email address with an optional name
 type Address struct {
 	Email string `json:"email"`
@@ -32,8 +37,15 @@ type TrackingSettings struct {
 	UnsubscribeGroupID *int64 `json:"unsubscribe_group_id,omitempty"`
 }
 
+// MailSettings represents additional settings for the email
+type MailSettings struct {
+	SandboxMode      bool `json:"sandbox_mode,omitempty"`       // When enabled, messages are not persisted or sent (sandbox only)
+	ReturnMessageIds bool `json:"return_message_ids,omitempty"` // When enabled, the API response will include message IDs for each email sent
+}
+
 // Email represents a single email to be sent
 type Email struct {
+	FromHeader   Address                `json:"from_header,omitempty"`
 	From         Address                `json:"from"`
 	To           []Address              `json:"to,omitempty"`
 	CC           []Address              `json:"cc,omitempty"`
@@ -54,12 +66,14 @@ type Email struct {
 
 // EmailRequest represents the request body for sending emails
 type EmailRequest struct {
-	Emails []Email `json:"emails"`
+	Emails       []Email       `json:"emails"`
+	MailSettings *MailSettings `json:"mail_settings,omitempty"`
 }
 
 // ApiResponse represents a successful API response
 type ApiResponse struct {
-	Status string `json:"status"`
+	Status     string   `json:"status"`
+	MessageIds []string `json:"message_ids,omitempty"`
 }
 
 // ApiErrorResponse represents an error API response
@@ -92,10 +106,8 @@ func NewLanefulClient(baseURL, authToken string) *LanefulClient {
 }
 
 // SendEmails sends one or more emails through the email service
-func (c *LanefulClient) SendEmails(ctx context.Context, emails []Email) (*ApiResponse, error) {
-	reqBody := EmailRequest{
-		Emails: emails,
-	}
+func (c *LanefulClient) SendEmailsWithOptions(ctx context.Context, request *EmailRequest) (*ApiResponse, error) {
+	reqBody := *request
 
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
@@ -108,6 +120,7 @@ func (c *LanefulClient) SendEmails(ctx context.Context, emails []Email) (*ApiRes
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.authToken)
+	req.Header.Set("User-Agent", userAgent)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -129,6 +142,12 @@ func (c *LanefulClient) SendEmails(ctx context.Context, emails []Email) (*ApiRes
 	}
 
 	return &apiResp, nil
+}
+
+func (c *LanefulClient) SendEmails(ctx context.Context, emails []Email) (*ApiResponse, error) {
+	return c.SendEmailsWithOptions(ctx, &EmailRequest{
+		Emails: emails,
+	})
 }
 
 // SendEmail is a convenience method to send a single email
