@@ -142,3 +142,62 @@ email := laneful.Email{
     },
 }
 ```
+
+## Deliverability Analytics
+
+Organization-level endpoints for monitoring deliverability. These live on the
+organization API host, so point the client at it:
+
+```go
+client := laneful.NewLanefulClient("https://api.laneful.net", authToken)
+```
+
+All three are paginated: pass a `cursor` (from the previous response's
+`NextCursor`) and an optional `Limit` (default 50, max 200). Dates are
+`time.Time` values sent as UTC calendar days; leave them zero to use the API
+defaults. See [`examples/analytics`](examples/analytics) for a runnable sample.
+
+### Domain Spam Ratio Radar
+
+Domains whose spam complaint ratio reached a critical level (≥ 0.1% of delivered
+messages) at a mailbox provider on a given day.
+
+```go
+res, err := client.ListDomainSpamRatioRadar(ctx, &laneful.ListDomainSpamRatioRadarParams{
+    WorkspaceIDs: []int64{1, 2}, // optional; empty = all workspaces
+    Domain:       "example.com", // optional
+    StartDate:    time.Now().AddDate(0, 0, -7),
+    EndDate:      time.Now(),
+})
+for _, e := range res.Radar {
+    fmt.Printf("%s %s @ %s: %.3f%%\n", e.Date, e.Domain, e.Esp, e.SpamRatio)
+}
+```
+
+### Google Postmaster Spam Reports
+
+Daily Gmail spam-rate reports from Google Postmaster Tools.
+
+```go
+res, err := client.ListGooglePostmasterSpamReports(ctx, &laneful.ListGooglePostmasterSpamReportsParams{
+    Domain: "example.com", // optional
+})
+for _, r := range res.SpamReports {
+    fmt.Printf("%s %s: %.3f%%\n", r.Date, r.Domain, r.SpamRatio)
+}
+```
+
+### Microsoft SNDS Reports
+
+Daily Microsoft SNDS reports for the organization's sending IPs, including the
+spam-filter verdict (`SndsFilterGreen`/`Yellow`/`Red`, empty when unknown).
+
+```go
+res, err := client.ListSndsReports(ctx, &laneful.ListSndsReportsParams{
+    IP: "203.0.113.5", // optional
+})
+for _, r := range res.SndsReports {
+    fmt.Printf("%s %s: filter=%s complaint=%.3f%% traps=%d\n",
+        r.Date, r.IP, r.FilterResult, r.ComplaintRate, r.TrapHits)
+}
+```
