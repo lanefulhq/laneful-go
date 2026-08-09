@@ -59,6 +59,7 @@ func main() {
 - Scheduled sending
 - Webhook data
 - Reply-to addresses
+- Domain management (list, create, verify, update email track, delete)
 
 ## API Reference
 
@@ -142,6 +143,62 @@ email := laneful.Email{
     },
 }
 ```
+
+## Domain Management
+
+Manage a workspace's sending domains. These are workspace-scoped endpoints on the
+organization API host, so point the client at it:
+
+```go
+client := laneful.NewLanefulClient("https://api.laneful.net", authToken)
+```
+
+### List, create, inspect, verify, and delete
+
+```go
+// List (paginated: pass Cursor from the previous response's Pagination.NextCursor)
+list, err := client.ListDomains(ctx, workspaceID, &laneful.ListDomainsParams{Limit: 50})
+
+// Create
+d, err := client.CreateDomain(ctx, workspaceID, &laneful.CreateDomainRequest{
+    Domain:     "mydomain.com",
+    Tracking:   "tracking",
+    ReturnPath: "return-path",
+})
+
+// Get one
+d, err = client.GetDomain(ctx, workspaceID, "mydomain.com")
+
+// Trigger DNS verification
+d, err = client.VerifyDomain(ctx, workspaceID, "mydomain.com")
+
+// Delete
+_, err = client.DeleteDomain(ctx, workspaceID, "mydomain.com")
+```
+
+### Update the email track
+
+`UpdateDomain` changes a domain's email track after creation, without deleting and
+recreating the domain (which would require re-verifying DNS). `EmailTrackID` is a
+`*string` so you can distinguish three cases:
+
+```go
+// Set the track
+trackID := "e59f0a35-05bc-4516-b585-c06f69c3e67e"
+d, err := client.UpdateDomain(ctx, workspaceID, "mydomain.com", &laneful.UpdateDomainRequest{
+    EmailTrackID: &trackID,
+})
+
+// Clear the track (fall back to the default) — send an empty string
+empty := ""
+d, err = client.UpdateDomain(ctx, workspaceID, "mydomain.com", &laneful.UpdateDomainRequest{
+    EmailTrackID: &empty,
+})
+
+// Leave the track unchanged — pass nil (the zero value)
+```
+
+See [`examples/domains`](examples/domains) for a runnable sample.
 
 ## Deliverability Analytics
 
