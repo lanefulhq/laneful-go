@@ -85,8 +85,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("verify: %v", err)
 	}
-	log.Printf("verification: verified=%t (dkim1=%t dkim2=%t tracking=%t return_path=%t)",
-		verified.Verified, verified.Dkim1Verified, verified.Dkim2Verified,
+	log.Printf("verification: verified=%t (dkim1=%t dkim2=%t dmarc=%t tracking=%t return_path=%t)",
+		verified.Verified, verified.Dkim1Verified, verified.Dkim2Verified, verified.DmarcVerified,
 		verified.TrackingVerified, verified.ReturnPathVerified)
 
 	// Optionally delete the domain.
