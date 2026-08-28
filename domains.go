@@ -18,6 +18,7 @@ type Domain struct {
 	ReturnPathVerified bool   `json:"return_path_verified"`
 	Dkim1Verified      bool   `json:"dkim1_verified"`
 	Dkim2Verified      bool   `json:"dkim2_verified"`
+	DmarcVerified      bool   `json:"dmarc_verified"`
 	// RequireTLS reports whether all mail from this domain must be sent over TLS.
 	RequireTLS bool `json:"require_tls"`
 	// EmailTrackID is the track used when sending from this domain. Empty means
