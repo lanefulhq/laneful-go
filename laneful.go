@@ -31,9 +31,9 @@ type Attachment struct {
 
 // TrackingSettings controls email tracking and unsubscribe settings
 type TrackingSettings struct {
-	Opens                bool    `json:"opens,omitempty"`
-	Clicks               bool    `json:"clicks,omitempty"`
-	Unsubscribes         bool    `json:"unsubscribes,omitempty"`
+	Opens                bool    `json:"opens"`
+	Clicks               bool    `json:"clicks"`
+	Unsubscribes         bool    `json:"unsubscribes"`
 	UnsubscribeGroupID   *int64  `json:"unsubscribe_group_id,omitempty"`
 	UnsubscribeGroupName *string `json:"unsubscribe_group_name,omitempty"`
 }
