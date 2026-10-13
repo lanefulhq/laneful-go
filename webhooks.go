@@ -4,10 +4,13 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"strings"
 )
 
-// VerifyWebhookSignature verifies the signature of a webhook payload
+// VerifyWebhookSignature verifies the HMAC-SHA256 signature of a raw webhook payload.
+// The signature is the x-webhook-signature header value, as bare hex or "sha256=<hex>".
 func VerifyWebhookSignature(secret, payload, signature string) bool {
+	signature = strings.TrimPrefix(signature, "sha256=")
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte(payload))
 	expected := hex.EncodeToString(mac.Sum(nil))

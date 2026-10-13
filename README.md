@@ -110,6 +110,18 @@ resp, err := client.SendEmailsWithOptions(ctx, &laneful.EmailRequest{
 
 Laneful remembers a key per organization for one hour. A repeated request with the same key gets status `accepted` with no message IDs and sends nothing, even if the emails differ, so use a new key for every distinct send. If a request fails, the key is released and a retry with the same key is processed normally. Sandbox mode requests are not deduplicated. A key longer than 36 bytes returns an error before any request is sent.
 
+### Verifying Webhook Signatures
+
+Verify the raw request body against the `x-webhook-signature` header, which is accepted as bare hex or `sha256=<hex>`:
+
+```go
+body, _ := io.ReadAll(r.Body)
+if !laneful.VerifyWebhookSignature(webhookSecret, string(body), r.Header.Get("x-webhook-signature")) {
+    http.Error(w, "invalid signature", http.StatusUnauthorized)
+    return
+}
+```
+
 ## Examples
 
 ### Template Email
