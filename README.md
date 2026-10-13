@@ -122,6 +122,8 @@ if !laneful.VerifyWebhookSignature(webhookSecret, string(body), r.Header.Get("x-
 }
 ```
 
+See [`examples/webhooks/receive_webhooks.go`](examples/webhooks/receive_webhooks.go) for a runnable receiver (`LANEFUL_WEBHOOK_SECRET=... go run ./examples/webhooks`).
+
 ## Examples
 
 ### Template Email
