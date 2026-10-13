@@ -42,6 +42,10 @@ type TrackingSettings struct {
 type MailSettings struct {
 	SandboxMode      bool `json:"sandbox_mode,omitempty"`       // When enabled, messages are not persisted or sent (sandbox only)
 	ReturnMessageIds bool `json:"return_message_ids,omitempty"` // When enabled, the API response will include message IDs for each email sent
+	// IdempotencyKey protects against duplicate sends (1 to 36 bytes; empty means unset).
+	// Laneful accepts a key once per organization for one hour: a repeated request with
+	// the same key is answered with status "accepted" (and no message IDs) and sends nothing.
+	IdempotencyKey string `json:"idempotency_key,omitempty"`
 }
 
 // Email represents a single email to be sent
@@ -108,6 +112,10 @@ func NewLanefulClient(baseURL, authToken string) *LanefulClient {
 
 // SendEmails sends one or more emails through the email service
 func (c *LanefulClient) SendEmailsWithOptions(ctx context.Context, request *EmailRequest) (*ApiResponse, error) {
+	if request.MailSettings != nil && len(request.MailSettings.IdempotencyKey) > 36 {
+		return nil, fmt.Errorf("idempotency_key must contain between 1 and 36 bytes")
+	}
+
 	reqBody := *request
 
 	jsonData, err := json.Marshal(reqBody)
