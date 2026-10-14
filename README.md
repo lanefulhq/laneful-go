@@ -146,7 +146,7 @@ email := laneful.Email{
 }
 ```
 
-Every `TrackingSettings` field you leave out is sent as `false`, so set all three to keep open, click and unsubscribe tracking on.
+Without `Tracking`, the request carries no tracking settings and Laneful tracks opens, clicks and unsubscribes. Once you set `Tracking`, every `TrackingSettings` field you leave out is sent as `false`, so set all three to keep open, click and unsubscribe tracking on.
 
 ## Domain Management
 
