@@ -91,6 +91,7 @@ resp, err := client.SendEmails(ctx, []laneful.Email{email1, email2})
 email := laneful.Email{
     From: laneful.Address{Email: "sender@example.com"},
     To: []laneful.Address{{Email: "user@example.com"}},
+    Subject: "Welcome!", // Required, also for template emails
     TemplateID: "welcome-template",
     TemplateData: map[string]interface{}{
         "name": "John Doe",
@@ -138,11 +139,14 @@ email := laneful.Email{
     Subject: "Tracked Email",
     HTMLContent: "<p>This email is tracked.</p>",
     Tracking: &laneful.TrackingSettings{
-        Opens:  true,
-        Clicks: true,
+        Opens:        true,
+        Clicks:       true,
+        Unsubscribes: true,
     },
 }
 ```
+
+Without `Tracking`, the request carries no tracking settings and Laneful tracks opens, clicks and unsubscribes. Once you set `Tracking`, every `TrackingSettings` field you leave out is sent as `false`, so set all three to keep open, click and unsubscribe tracking on.
 
 ## Domain Management
 
