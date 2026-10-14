@@ -83,6 +83,47 @@ resp, err := client.SendEmail(ctx, email)
 resp, err := client.SendEmails(ctx, []laneful.Email{email1, email2})
 ```
 
+#### Mail Settings
+
+Use `SendEmailsWithOptions` to pass request-level mail settings:
+
+```go
+resp, err := client.SendEmailsWithOptions(ctx, &laneful.EmailRequest{
+    Emails: []laneful.Email{email},
+    MailSettings: &laneful.MailSettings{
+        SandboxMode:      true, // Validate the request without persisting or sending
+        ReturnMessageIds: true, // Include message IDs in resp.MessageIds
+    },
+})
+```
+
+#### Duplicate Send Protection
+
+Set `IdempotencyKey` (1 to 36 bytes) and reuse it when you retry a send, for example after a timeout. The client does not retry on its own.
+
+```go
+resp, err := client.SendEmailsWithOptions(ctx, &laneful.EmailRequest{
+    Emails:       []laneful.Email{email},
+    MailSettings: &laneful.MailSettings{IdempotencyKey: fmt.Sprintf("order-%d", orderID)},
+})
+```
+
+Laneful remembers a key per organization for one hour. A repeated request with the same key gets status `accepted` with no message IDs and sends nothing, even if the emails differ, so use a new key for every distinct send. Detection is best effort. A request that fails with HTTP 500 doesn't keep its key, so a retry with it is processed as a new request: before resending after a 500, check your webhook events (a `request` event means Laneful accepted the email). Sandbox mode requests are not deduplicated. A key longer than 36 bytes returns an error before any request is sent.
+
+### Verifying Webhook Signatures
+
+Verify the raw request body against the `x-webhook-signature` header, which is accepted as bare hex or `sha256=<hex>`:
+
+```go
+body, _ := io.ReadAll(r.Body)
+if !laneful.VerifyWebhookSignature(webhookSecret, string(body), r.Header.Get("x-webhook-signature")) {
+    http.Error(w, "invalid signature", http.StatusUnauthorized)
+    return
+}
+```
+
+See [`examples/webhooks/receive_webhooks.go`](examples/webhooks/receive_webhooks.go) for a runnable receiver (`LANEFUL_WEBHOOK_SECRET=... go run ./examples/webhooks`).
+
 ## Examples
 
 ### Template Email
