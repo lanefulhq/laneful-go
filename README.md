@@ -108,7 +108,7 @@ resp, err := client.SendEmailsWithOptions(ctx, &laneful.EmailRequest{
 })
 ```
 
-Laneful remembers a key per organization for one hour. A repeated request with the same key gets status `accepted` with no message IDs and sends nothing, even if the emails differ, so use a new key for every distinct send. If a request fails, the key is released and a retry with the same key is processed normally. Sandbox mode requests are not deduplicated. A key longer than 36 bytes returns an error before any request is sent.
+Laneful remembers a key per organization for one hour. A repeated request with the same key gets status `accepted` with no message IDs and sends nothing, even if the emails differ, so use a new key for every distinct send. Detection is best effort. A request that fails with HTTP 500 doesn't keep its key, so a retry with it is processed as a new request: before resending after a 500, check your webhook events (a `request` event means Laneful accepted the email). Sandbox mode requests are not deduplicated. A key longer than 36 bytes returns an error before any request is sent.
 
 ### Verifying Webhook Signatures
 
