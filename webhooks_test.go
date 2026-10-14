@@ -39,3 +39,11 @@ func TestVerifyWebhookSignature(t *testing.T) {
 		})
 	}
 }
+
+func TestVerifyWebhookSignatureEmptySecret(t *testing.T) {
+	const payload = `{ "event": "delivery", "message_id": "H-1-abc" }`
+	// Anyone can compute the HMAC with an empty key, so it must not verify.
+	if VerifyWebhookSignature("", payload, sign("", payload)) {
+		t.Error("VerifyWebhookSignature() with an empty secret = true, want false")
+	}
+}
