@@ -113,3 +113,43 @@ func TestSendEmailHasNoMailSettings(t *testing.T) {
 		t.Errorf("mail_settings should be omitted: %v", bodies[0])
 	}
 }
+
+func TestSendEmailsWithOptionsChecksWebhookDataBytes(t *testing.T) {
+	var bodies []map[string]interface{}
+	client := NewLanefulClient(newTestServer(t, &bodies).URL, "token")
+
+	send := func(data map[string]string) error {
+		email := testEmail()
+		email.WebhookData = data
+		_, err := client.SendEmailsWithOptions(context.Background(), &EmailRequest{Emails: []Email{email}})
+		return err
+	}
+
+	// "é" is 2 bytes in UTF-8, so 25 of them fill a 50-byte key and 50 fill a 100-byte value.
+	if err := send(map[string]string{strings.Repeat("é", 25): strings.Repeat("é", 50)}); err != nil {
+		t.Errorf("key of 50 bytes and value of 100 bytes: err = %v, want nil", err)
+	}
+	if len(bodies) != 1 {
+		t.Fatalf("valid webhook data should be sent, got %d requests", len(bodies))
+	}
+
+	tooMany := map[string]string{}
+	for i := 0; i < 21; i++ {
+		tooMany[strings.Repeat("k", i+1)] = "v"
+	}
+	for _, tc := range []struct {
+		data map[string]string
+		want string
+	}{
+		{map[string]string{strings.Repeat("é", 26): "v"}, "keys cannot exceed 50 bytes"},
+		{map[string]string{"k": strings.Repeat("é", 51)}, "values cannot exceed 100 bytes"},
+		{tooMany, "more than 20 keys"},
+	} {
+		if err := send(tc.data); err == nil || !strings.Contains(err.Error(), tc.want) {
+			t.Errorf("err = %v, want %q", err, tc.want)
+		}
+	}
+	if len(bodies) != 1 {
+		t.Errorf("no request should be sent for invalid webhook data, got %d", len(bodies)-1)
+	}
+}

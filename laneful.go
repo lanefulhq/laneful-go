@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	version   = "1.2.0"
+	version   = "1.3.0"
 	userAgent = "laneful-go/" + version
 )
 
@@ -64,9 +64,11 @@ type Email struct {
 	Headers      map[string]string      `json:"headers,omitempty"`
 	ReplyTo      *Address               `json:"reply_to,omitempty"`
 	SendTime     int64                  `json:"send_time,omitempty"`
-	WebhookData  map[string]string      `json:"webhook_data,omitempty"`
-	Tag          string                 `json:"tag,omitempty"`
-	Tracking     *TrackingSettings      `json:"tracking,omitempty"`
+	// WebhookData is returned in this email's webhook events: at most 20 keys, keys up to
+	// 50 bytes and values up to 100 bytes (UTF-8). SendEmailsWithOptions checks these limits.
+	WebhookData map[string]string `json:"webhook_data,omitempty"`
+	Tag         string            `json:"tag,omitempty"`
+	Tracking    *TrackingSettings `json:"tracking,omitempty"`
 }
 
 // EmailRequest represents the request body for sending emails
@@ -115,6 +117,11 @@ func (c *LanefulClient) SendEmailsWithOptions(ctx context.Context, request *Emai
 	if request.MailSettings != nil && len(request.MailSettings.IdempotencyKey) > 36 {
 		return nil, fmt.Errorf("idempotency_key must contain between 1 and 36 bytes")
 	}
+	for _, email := range request.Emails {
+		if err := validateWebhookData(email.WebhookData); err != nil {
+			return nil, err
+		}
+	}
 
 	reqBody := *request
 
@@ -151,6 +158,23 @@ func (c *LanefulClient) SendEmailsWithOptions(ctx context.Context, request *Emai
 	}
 
 	return &apiResp, nil
+}
+
+// validateWebhookData applies the send API's webhook_data limits: at most 20 keys,
+// keys up to 50 bytes and values up to 100 bytes (UTF-8, so "é" counts as 2).
+func validateWebhookData(data map[string]string) error {
+	if len(data) > 20 {
+		return fmt.Errorf("webhook data cannot have more than 20 keys")
+	}
+	for key, value := range data {
+		if len(key) > 50 {
+			return fmt.Errorf("webhook data keys cannot exceed 50 bytes (UTF-8)")
+		}
+		if len(value) > 100 {
+			return fmt.Errorf("webhook data values cannot exceed 100 bytes (UTF-8)")
+		}
+	}
+	return nil
 }
 
 func (c *LanefulClient) SendEmails(ctx context.Context, emails []Email) (*ApiResponse, error) {
